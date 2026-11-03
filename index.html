@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="pt-BR">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <meta name="description" content="Simulador educativo de evolução patrimonial.">
+        <title>Simulador patrimonial</title>
+        <link rel="stylesheet" href="styles.css">
+        <script src="calculos.js" defer>
+        </script>
+        <script src="app.js" defer>
+        </script>
+    </head>
+    <body>
+        <a class="skip" href="#main">Pular para o conteúdo</a>
+        <header>
+            <div class="wrap">
+                <p class="eyebrow">Simulação educativa</p>
+                <h1>Simulador patrimonial</h1>
+                <p class="lead">Explore uma projeção com as premissas que você informar.</p>
+                <nav aria-label="Navegação principal">
+                    <a href="#simulacao">Simulação</a>
+                    <a href="#resultados">Resultados</a>
+                    <a href="#acompanhamento">Acompanhamento real</a>
+                    <a href="#interpretar">Como interpretar</a>
+                </nav>
+            </div>
+        </header>
+        <main id="main" class="wrap">
+            <aside class="warning">
+                <strong>Priorize a formação da sua reserva de emergência.</strong> Esta ferramenta é educativa e não recomenda ativos.</aside>
+            <section id="simulacao">
+                <p class="eyebrow">Premissas</p>
+                <h2>Simulação</h2>
+                <p>Informe todos os campos. A projeção só será atualizada quando as entradas forem válidas.</p>
+                <form id="sim-form" novalidate>
+                    <div id="sim-errors" class="errors" role="alert" tabindex="-1" hidden>
+                    </div>
+                    <fieldset>
+                        <legend>Prazo e início</legend>
+                        <p>O mês 0 representa a posição inicial; o primeiro mês projetado é o mês seguinte ao início escolhido.</p>
+                        <div class="grid">
+                            <div class="field">
+                                <label for="start">Mês e ano de início (obrigatório)</label>
+                                <input id="start" type="month" required aria-describedby="hint-start err-start">
+                                <small id="hint-start">Escolha uma referência explícita; nenhuma data é preenchida automaticamente.</small>
+                                <span id="err-start" data-error-for="start" class="field-error"></span>
+                            </div>
+                            <div class="field">
+                                <label for="months">Duração em meses (obrigatório)</label>
+                                <input id="months" inputmode="numeric" required aria-describedby="hint-months err-months">
+                                <small id="hint-months">Número inteiro de 1 a 120.</small>
+                                <span id="err-months" data-error-for="months" class="field-error"></span>
+                            </div>
+                        </div>
+                    </fieldset>
+                    <fieldset>
+                        <legend>Capital inicial</legend>
+                        <p>A soma das alocações precisa corresponder ao capital inicial. Nenhuma divisão é sugerida.</p>
+                        <div class="grid">
+                            <div class="field">
+                                <label for="capital">Capital inicial total (R$)</label>
+                                <input id="capital" inputmode="decimal" value="130,00" required aria-describedby="hint-capital err-capital">
+                                <small id="hint-capital">Referência editável do briefing.</small>
+                                <span id="err-capital" data-error-for="capital" class="field-error"></span>
+                            </div>
+                            <div class="field">
+                                <label for="initial-tesouro">Alocado ao Tesouro IPCA+ (R$)</label>
+                                <input id="initial-tesouro" inputmode="decimal" required aria-describedby="hint-initial-tesouro err-initial-tesouro">
+                                <small id="hint-initial-tesouro">Informe a parcela destinada ao Tesouro IPCA+.</small>
+                                <span id="err-initial-tesouro" data-error-for="initial-tesouro" class="field-error"></span>
+                            </div>
+                            <div class="field">
+                                <label for="initial-fii">Alocado a FII (R$)</label>
+                                <input id="initial-fii" inputmode="decimal" required aria-describedby="hint-initial-fii err-initial-fii">
+                                <small id="hint-initial-fii">Informe a parcela destinada a FII.</small>
+                                <span id="err-initial-fii" data-error-for="initial-fii" class="field-error"></span>
+                            </div>
+                        </div>
+                        <p id="allocation" aria-live="polite">
+                        </p>
+                    </fieldset>
+                    <fieldset>
+                        <legend>Aportes mensais previstos</legend>
+                        <p>Referências editáveis do briefing. Aportes previstos não são registros realizados.</p>
+                        <div class="grid">
+                            <div class="field">
+                                <label for="monthly-tesouro">Aporte mensal ao Tesouro IPCA+ (R$)</label>
+                                <input id="monthly-tesouro" inputmode="decimal" value="80,00" required aria-describedby="hint-mt err-mt">
+                                <small id="hint-mt">Altere esta parcela sem modificar a outra.</small>
+                                <span id="err-mt" data-error-for="monthly-tesouro" class="field-error"></span>
+                            </div>
+                            <div class="field">
+                                <label for="monthly-fii">Aporte mensal a FII (R$)</label>
+                                <input id="monthly-fii" inputmode="decimal" value="20,00" required aria-describedby="hint-mf err-mf">
+                                <small id="hint-mf">Altere esta parcela sem modificar a outra.</small>
+                                <span id="err-mf" data-error-for="monthly-fii" class="field-error"></span>
+                            </div>
+                        </div>
+                        <p>Total mensal: <strong id="monthly-total">
+                            </strong>
+                        </p>
+                    </fieldset>
+                    <fieldset>
+                        <legend>Premissas FII</legend>
+                        <p>Valorização altera o preço; Dividend Yield representa distribuições separadas. O caixa não rende.</p>
+                        <div class="grid">
+                            <div class="field">
+                                <label for="appreciation">Valorização anual (%)</label>
+                                <input id="appreciation" inputmode="decimal" required aria-describedby="hint-app err-app">
+                                <small id="hint-app">Taxa anual de variação do preço da cota.</small>
+                                <span id="err-app" data-error-for="appreciation" class="field-error"></span>
+                            </div>
+                            <div class="field">
+                                <label for="dy">Dividend Yield anual (%)</label>
+                                <input id="dy" inputmode="decimal" required aria-describedby="hint-dy err-dy">
+                                <small id="hint-dy">Distribuição mensal estimada como taxa anual dividida por 12.</small>
+                                <span id="err-dy" data-error-for="dy" class="field-error"></span>
+                            </div>
+                            <div class="field">
+                                <label for="share-price">Preço inicial da cota (R$)</label>
+                                <input id="share-price" inputmode="decimal" required aria-describedby="hint-price err-price">
+                                <small id="hint-price">Deve ser maior que zero.</small>
+                                <span id="err-price" data-error-for="share-price" class="field-error"></span>
+                            </div>
+                            <div class="field">
+                                <label for="reinvest">Percentual reinvestido (%)</label>
+                                <input id="reinvest" inputmode="decimal" value="100" required aria-describedby="hint-reinvest err-reinvest">
+                                <small id="hint-reinvest">A parcela restante fica retida até o fim do horizonte.</small>
+                                <span id="err-reinvest" data-error-for="reinvest" class="field-error"></span>
+                            </div>
+                        </div>
+                    </fieldset>
+                    <fieldset>
+                        <legend>Premissas Tesouro IPCA+</legend>
+                        <p>Cálculo nominal simplificado; não representa título específico, preço de mercado, cupons ou vencimento.</p>
+                        <div class="grid">
+                            <div class="field">
+                                <label for="inflation">Inflação anual (%)</label>
+                                <input id="inflation" inputmode="decimal" required aria-describedby="hint-inflation err-inflation">
+                                <small id="hint-inflation">Premissa separada da taxa real.</small>
+                                <span id="err-inflation" data-error-for="inflation" class="field-error"></span>
+                            </div>
+                            <div class="field">
+                                <label for="real-rate">Taxa real anual (%)</label>
+                                <input id="real-rate" inputmode="decimal" required aria-describedby="hint-real err-real">
+                                <small id="hint-real">Premissa separada da inflação.</small>
+                                <span id="err-real" data-error-for="real-rate" class="field-error"></span>
+                            </div>
+                        </div>
+                    </fieldset>
+                    <div class="actions">
+                        <button type="submit">Gerar projeção</button>
+                        <p>A projeção só será atualizada quando todas as entradas forem válidas.</p>
+                    </div>
+                </form>
+            </section>
+            <section id="resultados">
+                <p class="eyebrow">Projeção</p>
+                <h2>Resultados da projeção</h2>
+                <p id="projection-status" role="status" aria-live="polite">Preencha as premissas e gere uma projeção para consultar os resultados.</p>
+                <p id="stale" class="warning" hidden>Desatualizada — as entradas mudaram. Gere novamente. Os valores abaixo são da projeção anterior.</p>
+                <div id="results" hidden>
+                    <h3>Resumo patrimonial projetado</h3>
+                    <div class="cards">
+                        <article class="own">
+                            <h4>Recursos próprios previstos</h4>
+                            <p id="own">
+                            </p>
+                        </article>
+                        <article class="total">
+                            <h4>Patrimônio projetado total</h4>
+                            <p id="total">
+                            </p>
+                        </article>
+                        <article class="treasury">
+                            <h4>Tesouro IPCA+</h4>
+                            <p id="treasury">
+                            </p>
+                        </article>
+                        <article class="shares">
+                            <h4>Valor das cotas FII</h4>
+                            <p id="share-value">
+                            </p>
+                            <small id="share-count">
+                            </small>
+                        </article>
+                        <article class="eligible">
+                            <h4>Caixa FII elegível para compras</h4>
+                            <p id="eligible">
+                            </p>
+                        </article>
+                        <article class="retained">
+                            <h4>Caixa FII retido até o fim do horizonte</h4>
+                            <p id="retained">
+                            </p>
+                        </article>
+                        <article>
+                            <h4>Caixa FII total</h4>
+                            <p id="cash">
+                            </p>
+                            <small>Elegível + retido</small>
+                        </article>
+                    </div>
+                    <p>Rendimentos reinvestidos não são somados novamente aos recursos próprios.</p>
+                    <h3>Evolução projetada por mês</h3>
+                    <figure class="chart">
+                        <svg id="chart" viewBox="0 0 1000 440" role="img" aria-labelledby="chart-title chart-desc">
+                            <title id="chart-title">Evolução projetada por mês</title>
+                            <desc id="chart-desc">Gráfico da projeção. A tabela abaixo contém os valores mensais.</desc>
+                        </svg>
+                        <ul id="legend" aria-label="Séries do gráfico">
+                        </ul>
+                    </figure>
+                    <h3>Detalhamento mensal</h3>
+                    <p>Mês 0 é a alocação inicial.</p>
+                    <div class="table-scroll" tabindex="0" role="region" aria-label="Detalhamento mensal da projeção; tabela rolável horizontalmente">
+                        <table>
+                            <caption>Detalhamento mensal da projeção</caption>
+                            <thead>
+                                <tr>
+                                    <th scope="col">Mês / referência</th>
+                                    <th scope="col">Recursos próprios</th>
+                                    <th scope="col">Saldo Tesouro</th>
+                                    <th scope="col">Quantidade de cotas</th>
+                                    <th scope="col">Preço da cota</th>
+                                    <th scope="col">Valor das cotas</th>
+                                    <th scope="col">Caixa elegível</th>
+                                    <th scope="col">Caixa retido</th>
+                                    <th scope="col">Caixa FII total</th>
+                                    <th scope="col">Patrimônio total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rows">
+                            </tbody>
+                        </table>
+                    </div>
+                    <h3>Meta pedagógica: renda mensal equivalente ao preço de uma cota</h3>
+                    <div id="magic" class="panel">
+                    </div>
+                    <h3>Premissas aplicadas</h3>
+                    <dl id="assumptions">
+                    </dl>
+                    <aside class="warning">
+                        <p>Resultado depende das premissas e não garante rentabilidade. Custos e impostos não estão incluídos. Tesouro IPCA+ é simplificado. Não há recomendação de ativo.</p>
+                    </aside>
+                </div>
+            </section>
+            <section id="acompanhamento">
+                <p class="eyebrow">Registros manuais</p>
+                <h2>Acompanhamento real</h2>
+                <p>Registre valores observados ou movimentos efetivamente realizados. A projeção não cria registros reais.</p>
+                <p>A referência de acompanhamento real é de 12 meses e independente do prazo da simulação.</p>
+                <p id="storage" role="status" aria-live="polite">
+                </p>
+                <div class="tracking">
+                    <section class="panel">
+                        <h3>Movimentos realizados</h3>
+                        <p>Movimentos são fluxos; não alteram a projeção.</p>
+                        <button id="show-movement" class="secondary" type="button" aria-expanded="false" aria-controls="movement-form">Registrar movimento</button>
+                        <form id="movement-form" hidden novalidate>
+                            <div id="movement-errors" class="errors" role="alert" tabindex="-1" hidden>
+                            </div>
+                            <div class="field">
+                                <label for="movement-date">Data efetiva (obrigatório)</label>
+                                <input id="movement-date" type="date" required aria-describedby="md-hint md-error">
+                                <small id="md-hint">Use a data do movimento realizado.</small>
+                                <span id="md-error" data-error-for="movement-date" class="field-error"></span>
+                            </div>
+                            <div class="field">
+                                <label for="movement-module">Módulo (obrigatório)</label>
+                                <select id="movement-module" required aria-describedby="mm-hint mm-error">
+                                    <option value="">Selecione</option>
+                                    <option value="tesouro">Tesouro IPCA+</option>
+                                    <option value="fii">FII</option>
+                                </select>
+                                <small id="mm-hint">Escolha o módulo relacionado.</small>
+                                <span id="mm-error" data-error-for="movement-module" class="field-error"></span>
+                            </div>
+                            <div class="field">
+                                <label for="movement-type">Tipo (obrigatório)</label>
+                                <select id="movement-type" required aria-describedby="mt-hint mt-error">
+                                    <option value="">Selecione</option>
+                                    <option value="aporte">Aporte</option>
+                                    <option value="compra">Compra</option>
+                                    <option value="rendimento">Rendimento recebido</option>
+                                    <option value="custo-imposto">Custo/imposto efetivamente pago</option>
+                                </select>
+                                <small id="mt-hint">Registre somente o que foi realizado.</small>
+                                <span id="mt-error" data-error-for="movement-type" class="field-error"></span>
+                            </div>
+                            <div class="field">
+                                <label for="movement-value">Valor efetivo (R$)</label>
+                                <input id="movement-value" inputmode="decimal" required aria-describedby="mv-hint mv-error">
+                                <small id="mv-hint">Valor com até duas casas decimais.</small>
+                                <span id="mv-error" data-error-for="movement-value" class="field-error"></span>
+                            </div>
+                            <div class="field">
+                                <label for="movement-asset">Ativo/título/FII (opcional)</label>
+                                <input id="movement-asset">
+                                <small>Preencha somente se souber.</small>
+                            </div>
+                            <div class="field">
+                                <label for="movement-quantity">Quantidade (opcional)</label>
+                                <input id="movement-quantity" inputmode="decimal">
+                                <small>Preencha somente se souber a quantidade efetiva.</small>
+                                <span id="mq-error" data-error-for="movement-quantity" class="field-error"></span>
+                            </div>
+                            <button type="submit">Salvar movimento</button>
+                            <p id="movement-status" role="status" aria-live="polite">
+                            </p>
+                        </form>
+                        <p id="movement-empty" class="empty">Nenhum movimento real registrado. Aportes planejados aparecem apenas na projeção.</p>
+                        <ul id="movement-list">
+                        </ul>
+                    </section>
+                    <section class="panel">
+                        <h3>Observações patrimoniais</h3>
+                        <p>Observações são fotografias, não fluxos. Não se somam entre si ou aos movimentos e não alteram a projeção.</p>
+                        <button id="show-observation" class="secondary" type="button" aria-expanded="false" aria-controls="observation-form">Registrar observação patrimonial</button>
+                        <form id="observation-form" hidden novalidate>
+                            <div id="observation-errors" class="errors" role="alert" tabindex="-1" hidden>
+                            </div>
+                            <div class="field">
+                                <label for="observation-date">Data observada (obrigatório)</label>
+                                <input id="observation-date" type="date" required aria-describedby="od-hint od-error">
+                                <small id="od-hint">Use a data em que o valor foi observado.</small>
+                                <span id="od-error" data-error-for="observation-date" class="field-error"></span>
+                            </div>
+                            <div class="field">
+                                <label for="observation-module">Módulo (obrigatório)</label>
+                                <select id="observation-module" required aria-describedby="om-hint om-error">
+                                    <option value="">Selecione</option>
+                                    <option value="tesouro">Tesouro IPCA+</option>
+                                    <option value="fii">FII</option>
+                                </select>
+                                <small id="om-hint">Escolha o módulo relacionado.</small>
+                                <span id="om-error" data-error-for="observation-module" class="field-error"></span>
+                            </div>
+                            <div class="field">
+                                <label for="observation-value">Valor observado (R$)</label>
+                                <input id="observation-value" inputmode="decimal" required aria-describedby="ov-hint ov-error">
+                                <small id="ov-hint">Valor com até duas casas decimais.</small>
+                                <span id="ov-error" data-error-for="observation-value" class="field-error"></span>
+                            </div>
+                            <div class="field">
+                                <label for="observation-asset">Ativo/título/FII (opcional)</label>
+                                <input id="observation-asset">
+                                <small>Preencha somente se souber.</small>
+                            </div>
+                            <div class="field">
+                                <label for="observation-quantity">Quantidade detida (opcional)</label>
+                                <input id="observation-quantity" inputmode="decimal">
+                                <small>Preencha somente se souber.</small>
+                                <span id="oq-error" data-error-for="observation-quantity" class="field-error"></span>
+                            </div>
+                            <button type="submit">Salvar observação</button>
+                            <p id="observation-status" role="status" aria-live="polite">
+                            </p>
+                        </form>
+                        <p id="observation-empty" class="empty">Nenhum patrimônio observado registrado. A projeção não preencherá este histórico.</p>
+                        <ul id="observation-list">
+                        </ul>
+                    </section>
+                </div>
+                <p>Registros manuais não representam confirmação por instituição financeira.</p>
+            </section>
+            <section id="interpretar">
+                <p class="eyebrow">Conteúdo educativo</p>
+                <h2>Como interpretar</h2>
+                <div class="education">
+                    <article>
+                        <h3>Aportes e recursos próprios</h3>
+                        <p>Recursos próprios são capital inicial e aportes mensais. Rendimentos não são aportes próprios.</p>
+                    </article>
+                    <article>
+                        <h3>Preço da cota e Dividend Yield</h3>
+                        <p>Valorização altera o preço. Distribuições são calculadas separadamente pela taxa anual dividida por 12.</p>
+                    </article>
+                    <article>
+                        <h3>Caixa elegível e retido</h3>
+                        <p>O caixa elegível pode comprar cotas inteiras. A parcela não reinvestida fica retida até o fim. Ambos compõem o patrimônio, mas nenhum compõe a meta.</p>
+                    </article>
+                    <article>
+                        <h3>Tesouro IPCA+ nesta simulação</h3>
+                        <p>A taxa nominal combina inflação e taxa real de forma simplificada; não representa título específico, cupons, vencimento, custos ou impostos.</p>
+                    </article>
+                    <article>
+                        <h3>Número Mágico</h3>
+                        <p>A base usa somente o valor final das cotas FII. A diferença representa renda mensal, não capital a investir.</p>
+                    </article>
+                    <article>
+                        <h3>Limites</h3>
+                        <p>Resultados dependem das premissas, não garantem rentabilidade e não recomendam ativos ou consumo de patrimônio. Projeções não criam registros reais.</p>
+                    </article>
+                </div>
+            </section>
+        </main>
+        <footer class="wrap">
+            <p>Simulação educativa. Custos e impostos não estão incluídos.</p>
+        </footer>
+    </body>
+</html>
